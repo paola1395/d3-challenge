@@ -152,29 +152,21 @@ function updateToolTip(chosenXAxis, chosenXAxis, circlesGroup, textGroup) {
   return circlesGroup;
 }
 
-
-
-
-
-
-// Retrieve data from the CSV file and execute everything below
-d3.csv("data.csv").then(function(peopleData, err) {
-  if (err) throw err;
+// Retrieve data from the CSV file 
+d3.csv("data.csv").then(function(peopleData) {
 
   // parse data
   peopleData.forEach(function(data) {
-    data.hair_length = +data.hair_length;
-    data.num_hits = +data.num_hits;
-    data.num_albums = +data.num_albums;
+    data.poverty = +data.poverty;
+    data.age = +data.age;
+    data.healthcare = +data.healthcare;
+    data.smokes = +data.smokes;
+
   });
 
-  // xLinearScale function above csv import
-  var xLinearScale = xScale(hairData, chosenXAxis);
-
-  // Create y scale function
-  var yLinearScale = d3.scaleLinear()
-    .domain([0, d3.max(hairData, d => d.num_hits)])
-    .range([height, 0]);
+  // xLinearScale & yLinearScale function
+  var xLinearScale = xScale(peopleData, chosenXAxis);
+  var yLinearScale = yScale(peopleData, chosenYAxis);
 
   // Create initial axis functions
   var bottomAxis = d3.axisBottom(xLinearScale);
@@ -187,46 +179,73 @@ d3.csv("data.csv").then(function(peopleData, err) {
     .call(bottomAxis);
 
   // append y axis
-  chartGroup.append("g")
+  var yAxis = chartGroup.append("g")
+    .classed("y-axis", true)
     .call(leftAxis);
 
   // append initial circles
-  var circlesGroup = chartGroup.selectAll("circle")
-    .data(hairData)
+  var circlesGroup = chartGroup.selectAll(".stateCircle")
+    .data(peopleData)
     .enter()
     .append("circle")
     .attr("cx", d => xLinearScale(d[chosenXAxis]))
-    .attr("cy", d => yLinearScale(d.num_hits))
-    .attr("r", 20)
-    .attr("fill", "pink")
+    .attr("cy", d => yLinearScale(d[chosenYAxis]))
+    .attr("r", 15)
+    .attr("class", ".stateCircle")
     .attr("opacity", ".5");
 
-  // Create group for two x-axis labels
-  var labelsGroup = chartGroup.append("g")
+  // Append text to circles
+  var textGroup = chartGroup.selectAll(".stateText")
+    .data(peopleData)
+    .enter()
+    .append("text")
+    .attr("x", d => xLinearScale(d[chosenXAxis]))
+    .attr("y", d => yLinearScale(d[chosenYAxis]))
+    .text(d => (d.state))
+    .attr("class", "stateText")
+    .attr("text-anchor", "middle");
+
+  // Create group for two x-axis labels and append
+  var xLabelsGroup = chartGroup.append("g")
     .attr("transform", `translate(${width / 2}, ${height + 20})`);
 
-  var hairLengthLabel = labelsGroup.append("text")
+  var povertyLabel = xLabelsGroup.append("text")
     .attr("x", 0)
     .attr("y", 20)
-    .attr("value", "hair_length") // value to grab for event listener
+    .attr("value", "poverty") // value to grab for event listener
     .classed("active", true)
-    .text("Hair Metal Ban Hair Length (inches)");
+    .text("In Poverty (%)");
 
-  var albumsLabel = labelsGroup.append("text")
+  var ageLabel = xLabelsGroup.append("text")
     .attr("x", 0)
     .attr("y", 40)
-    .attr("value", "num_albums") // value to grab for event listener
+    .attr("value", "age") // value to grab for event listener
     .classed("inactive", true)
-    .text("# of Albums Released");
+    .text("Age (Median)");
 
-  // append y axis
-  chartGroup.append("text")
+  // Create group for two y-axis labels and append
+  var yLabelsGroup = chartGroup.append("g")
+    .attr("transform", `translate(-25, ${height / 2})`);
+
+  var healthcareLabel = yLabelsGroup.append("text")
     .attr("transform", "rotate(-90)")
-    .attr("y", 0 - margin.left)
-    .attr("x", 0 - (height / 2))
+    .attr("y", -30)
+    .attr("x", 0)
     .attr("dy", "1em")
+    .attr("value", "healthcare")
     .classed("axis-text", true)
-    .text("Number of Billboard 500 Hits");
+    .classed("active", true)
+    .text("Lacks Healthcare (%)");
+
+    var smokesLabel = yLabelsGroup.append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("y", -50)
+    .attr("x", 0)
+    .attr("dy", "1em")
+    .attr("value", "smokes")
+    .classed("axis-text", true)
+    .classed("inactive", true)
+    .text("Smokes (%)");
 
   // updateToolTip function above csv import
   var circlesGroup = updateToolTip(chosenXAxis, circlesGroup);
